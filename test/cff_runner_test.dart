@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cff/cff.dart';
+import 'package:cff/src/generation/feature_formatter.dart';
 import 'package:cff/src/prompt/state_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -158,6 +159,41 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  test('formats the generated feature', () async {
+    final project = writePubspec(createTempDir(), flutterPubspec, 'app');
+
+    expect(
+      await runner.run(['user_profile', '-s', 'bloc'], workingDir: project),
+      0,
+    );
+
+    final check = await Process.run(Platform.resolvedExecutable, [
+      'format',
+      '--output=none',
+      '--set-exit-if-changed',
+      p.join(project.path, 'lib', 'feature', 'user_profile'),
+    ]);
+    expect(check.exitCode, 0, reason: '${check.stdout}');
+    expect(out.toString(), isNot(contains('could not format')));
+  });
+
+  test('a formatting failure warns and still succeeds', () async {
+    final project = writePubspec(createTempDir(), flutterPubspec, 'app');
+    final runner = CffRunner(
+      out: out,
+      err: err,
+      featureFormatter: FeatureFormatter(
+        runProcess: (executable, arguments, {workingDirectory}) =>
+            throw const ProcessException('dart', [], 'not found'),
+      ),
+    );
+
+    expect(await runner.run(['owl', '-s', 'cubit'], workingDir: project), 0);
+    expect(out.toString(), contains('could not format the generated files'));
+    expect(out.toString(), contains('Created feature "owl"'));
+    expect(err.toString(), isEmpty);
+  });
 
   test('reports a file system failure during generation', () async {
     final project = writePubspec(createTempDir(), flutterPubspec, 'app');

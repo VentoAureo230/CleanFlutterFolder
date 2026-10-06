@@ -6,6 +6,7 @@ import 'checks/duplicate_feature_checker.dart';
 import 'checks/package_checker.dart';
 import 'generation/boilerplate_injector.dart';
 import 'generation/core_file_creator.dart';
+import 'generation/feature_formatter.dart';
 import 'generation/file_creator.dart';
 import 'generation/folder_generator.dart';
 import 'layout/feature_layout.dart';
@@ -32,11 +33,17 @@ class CffRunner {
   final _folderGenerator = FolderGenerator();
   final _fileCreator = FileCreator();
   final _boilerplateInjector = BoilerplateInjector();
+  final FeatureFormatter _featureFormatter;
 
-  CffRunner({StringSink? out, StringSink? err, StatePicker? statePicker})
-    : _out = out ?? stdout,
-      _err = err ?? stderr,
-      _statePicker = statePicker ?? StatePicker(out: out);
+  CffRunner({
+    StringSink? out,
+    StringSink? err,
+    StatePicker? statePicker,
+    FeatureFormatter? featureFormatter,
+  }) : _out = out ?? stdout,
+       _err = err ?? stderr,
+       _statePicker = statePicker ?? StatePicker(out: out),
+       _featureFormatter = featureFormatter ?? FeatureFormatter();
 
   Future<int> run(List<String> arguments, {Directory? workingDir}) async {
     try {
@@ -74,6 +81,12 @@ class CffRunner {
       } on FileSystemException catch (e) {
         throw CffException(_generationFailure(e, featureDir, name));
       }
+
+      final formatWarning = await _featureFormatter.format(
+        featureDir,
+        projectRoot,
+      );
+      if (formatWarning != null) _out.writeln(formatWarning);
 
       _out
         ..writeln(
