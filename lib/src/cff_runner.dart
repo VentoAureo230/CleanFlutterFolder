@@ -3,6 +3,8 @@ import 'dart:io';
 import 'args/argument_parser.dart';
 import 'cff_exception.dart';
 import 'checks/duplicate_feature_checker.dart';
+import 'checks/package_checker.dart';
+import 'generation/boilerplate_injector.dart';
 import 'generation/core_file_creator.dart';
 import 'generation/file_creator.dart';
 import 'generation/folder_generator.dart';
@@ -24,10 +26,12 @@ class CffRunner {
   final _featureNameValidator = FeatureNameValidator();
   final _rootFinder = RootFinder();
   final _duplicateFeatureChecker = DuplicateFeatureChecker();
+  final _packageChecker = PackageChecker();
   final StatePicker _statePicker;
   final _coreFileCreator = CoreFileCreator();
   final _folderGenerator = FolderGenerator();
   final _fileCreator = FileCreator();
+  final _boilerplateInjector = BoilerplateInjector();
 
   CffRunner({StringSink? out, StringSink? err, StatePicker? statePicker})
     : _out = out ?? stdout,
@@ -43,7 +47,9 @@ class CffRunner {
       }
 
       _featureNameValidator.validate(parsed.featureName);
-      final projectRoot = _rootFinder.find(workingDir ?? Directory.current);
+      final project = _rootFinder.find(workingDir ?? Directory.current);
+      final projectRoot = project.root;
+      _warnMissingPackages(_packageChecker.check(project));
       final name = FeatureName(parsed.featureName);
       _duplicateFeatureChecker.check(projectRoot, name);
 
@@ -59,16 +65,30 @@ class CffRunner {
         }
         _folderGenerator.generate(featureDir);
         _fileCreator.create(featureDir, name, state);
-        // TODO(step 4): inject boilerplate into the empty files.
+        _boilerplateInjector.inject(
+          featureDir,
+          name,
+          state,
+          project.packageName,
+        );
       } on FileSystemException catch (e) {
         throw CffException(_generationFailure(e, featureDir, name));
       }
 
-      // TODO(step 5): check packages; print final messages.
-      _out.writeln(
-        'Created feature "$name" (${state.name}) at ${featureDir.path} '
-        '(files are empty until templates are added).',
-      );
+      _out
+        ..writeln(
+          'Created feature "$name" (${state.name}) at ${featureDir.path}.',
+        )
+        ..writeln()
+        ..writeln('Next steps:')
+        ..writeln(
+          '  1. Generate the retrofit code: '
+          'dart run build_runner build --delete-conflicting-outputs',
+        )
+        ..writeln(
+          '  2. Call register${name.pascal}Dependencies(sl) in your GetIt '
+          'setup, after Dio is registered.',
+        );
       return 0;
     } on CffUsageException catch (e) {
       _err
@@ -80,6 +100,23 @@ class CffRunner {
       _err.writeln('Error: ${e.message}');
       return 1;
     }
+  }
+
+  void _warnMissingPackages(MissingPackages missing) {
+    if (missing.isEmpty) return;
+    _out.writeln(
+      'Warning: the generated code needs packages this project does not '
+      'declare yet. Add them with:',
+    );
+    if (missing.runtime.isNotEmpty) {
+      _out.writeln('  flutter pub add ${missing.runtime.join(' ')}');
+    }
+    if (missing.dev.isNotEmpty) {
+      _out.writeln(
+        '  flutter pub add ${missing.dev.map((p) => 'dev:$p').join(' ')}',
+      );
+    }
+    _out.writeln();
   }
 
   String _generationFailure(

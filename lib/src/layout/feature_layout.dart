@@ -18,12 +18,14 @@ enum TemplateId {
   deleteResponseModel,
   apiService,
   repositoryImpl,
-  dependencies,
+  dependenciesCubit,
+  dependenciesBloc,
   cubit,
   bloc,
   event,
   state,
-  page,
+  pageCubit,
+  pageBloc,
   widget,
 }
 
@@ -98,7 +100,16 @@ abstract final class FeatureLayout {
     LayoutFile('domain/usecases/post_{name}.dart', TemplateId.postUseCase),
     LayoutFile('domain/usecases/edit_{name}.dart', TemplateId.editUseCase),
     LayoutFile('domain/usecases/delete_{name}.dart', TemplateId.deleteUseCase),
-    LayoutFile('{name}_dependencies.dart', TemplateId.dependencies),
+    LayoutFile(
+      '{name}_dependencies.dart',
+      TemplateId.dependenciesCubit,
+      variants: {StateManagement.cubit},
+    ),
+    LayoutFile(
+      '{name}_dependencies.dart',
+      TemplateId.dependenciesBloc,
+      variants: {StateManagement.bloc},
+    ),
     LayoutFile(
       'presentation/bloc/{name}_cubit.dart',
       TemplateId.cubit,
@@ -115,7 +126,16 @@ abstract final class FeatureLayout {
       variants: {StateManagement.bloc},
     ),
     LayoutFile('presentation/bloc/{name}_state.dart', TemplateId.state),
-    LayoutFile('presentation/pages/{name}_page.dart', TemplateId.page),
+    LayoutFile(
+      'presentation/pages/{name}_page.dart',
+      TemplateId.pageCubit,
+      variants: {StateManagement.cubit},
+    ),
+    LayoutFile(
+      'presentation/pages/{name}_page.dart',
+      TemplateId.pageBloc,
+      variants: {StateManagement.bloc},
+    ),
     LayoutFile('presentation/widget/{name}_widget.dart', TemplateId.widget),
   ];
 
