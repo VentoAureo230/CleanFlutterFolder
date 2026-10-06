@@ -34,3 +34,19 @@ Directory writePubspec(
   File(p.join(dir.path, 'pubspec.yaml')).writeAsStringSync(content);
   return dir;
 }
+
+/// A Flutter pubspec declaring every package the generated code needs.
+const completeFlutterPubspec = '''
+name: demo_app
+dependencies:
+  flutter:
+    sdk: flutter
+  equatable: ^2.0.0
+  flutter_bloc: ^9.0.0
+  get_it: ^8.0.0
+  retrofit: ^4.0.0
+  dio: ^5.0.0
+dev_dependencies:
+  retrofit_generator: ^9.0.0
+  build_runner: ^2.4.0
+''';

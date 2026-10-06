@@ -52,6 +52,79 @@ void main() {
     );
   });
 
+  test(
+    'warns about missing packages before generating, then proceeds',
+    () async {
+      final project = writePubspec(createTempDir(), flutterPubspec, 'app');
+
+      expect(await runner.run(['owl', '-s', 'cubit'], workingDir: project), 0);
+
+      final output = out.toString();
+      expect(
+        output,
+        contains('flutter pub add equatable flutter_bloc get_it retrofit dio'),
+      );
+      expect(
+        output,
+        contains('flutter pub add dev:retrofit_generator dev:build_runner'),
+      );
+      expect(
+        output.indexOf('Warning:'),
+        lessThan(output.indexOf('Created feature')),
+      );
+      expect(err.toString(), isEmpty);
+    },
+  );
+
+  test('prints no warning when every package is declared', () async {
+    final project = writePubspec(
+      createTempDir(),
+      completeFlutterPubspec,
+      'app',
+    );
+
+    expect(await runner.run(['owl', '-s', 'cubit'], workingDir: project), 0);
+    expect(out.toString(), isNot(contains('Warning:')));
+  });
+
+  test('ends with the build_runner and registration steps', () async {
+    final project = writePubspec(
+      createTempDir(),
+      completeFlutterPubspec,
+      'app',
+    );
+
+    expect(
+      await runner.run(['user_profile', '-s', 'bloc'], workingDir: project),
+      0,
+    );
+    expect(
+      out.toString(),
+      contains('dart run build_runner build --delete-conflicting-outputs'),
+    );
+    expect(out.toString(), contains('registerUserProfileDependencies(sl)'));
+  });
+
+  for (final state in ['cubit', 'bloc']) {
+    test('generates Dart code that parses ($state)', () async {
+      final project = writePubspec(createTempDir(), flutterPubspec, 'app');
+
+      expect(
+        await runner.run(['user_profile', '-s', state], workingDir: project),
+        0,
+        reason: err.toString(),
+      );
+
+      // `dart format` exits with 65 when a file can't be parsed.
+      final format = await Process.run(Platform.resolvedExecutable, [
+        'format',
+        '--output=none',
+        p.join(project.path, 'lib'),
+      ]);
+      expect(format.exitCode, 0, reason: '${format.stdout}${format.stderr}');
+    });
+  }
+
   test('reports a file system failure during generation', () async {
     final project = writePubspec(createTempDir(), flutterPubspec, 'app');
     // A file where the lib/feature folder should be makes generation fail.

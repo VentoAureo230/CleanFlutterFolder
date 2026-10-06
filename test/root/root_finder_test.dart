@@ -12,14 +12,49 @@ void main() {
 
   test('finds the root from the root folder itself', () {
     final project = writePubspec(createTempDir(), flutterPubspec, 'app');
-    expect(finder.find(project).path, project.absolute.path);
+    expect(finder.find(project).root.path, project.absolute.path);
   });
 
   test('finds the root from a nested subfolder', () {
     final project = writePubspec(createTempDir(), flutterPubspec, 'app');
     final nested = Directory(p.join(project.path, 'lib', 'core', 'utils'))
       ..createSync(recursive: true);
-    expect(finder.find(nested).path, project.absolute.path);
+    expect(finder.find(nested).root.path, project.absolute.path);
+  });
+
+  test('reads the package name from the pubspec', () {
+    final project = writePubspec(createTempDir(), flutterPubspec, 'app');
+    expect(finder.find(project).packageName, 'demo_app');
+  });
+
+  test('collects dependencies and dev_dependencies', () {
+    final project = writePubspec(
+      createTempDir(),
+      completeFlutterPubspec,
+      'app',
+    );
+    expect(
+      finder.find(project).dependencies,
+      containsAll(['flutter', 'dio', 'retrofit', 'build_runner']),
+    );
+  });
+
+  test('fails when the pubspec has no package name', () {
+    final project = writePubspec(
+      createTempDir(),
+      flutterPubspec.replaceFirst('name: demo_app\n', ''),
+      'app',
+    );
+    expect(
+      () => finder.find(project),
+      throwsA(
+        isA<CffException>().having(
+          (e) => e.message,
+          'message',
+          contains('no package name'),
+        ),
+      ),
+    );
   });
 
   test('fails when the nearest pubspec is not a Flutter project', () {
