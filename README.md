@@ -172,7 +172,7 @@ bloc constructors. They are expected; the code is correct as generated.
 ## Contributing
 
 `cff` is a personal tool, but bug reports, ideas and pull requests are
-welcome on the [issue tracker](https://github.com/<user>/cff/issues).
+welcome on the [issue tracker](https://github.com/VentoAureo230/CleanFlutterFolder/issues).
 
 ## License
 
