@@ -126,7 +126,7 @@ void main() {
         cubit,
         contains('class UserProfileCubit extends Cubit<UserProfileState>'),
       );
-      expect(cubit, contains('final previous = state.userProfile;'));
+      expect(cubit, contains('final previous = state.userProfileEntity;'));
       expect(
         cubit,
         contains(

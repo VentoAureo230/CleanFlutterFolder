@@ -125,6 +125,40 @@ void main() {
     });
   }
 
+  test(
+    'feature names matching template identifiers produce no name conflicts',
+    () async {
+      final project = writePubspec(createTempDir(), flutterPubspec, 'app');
+      const names = ['id', 'state', 'error', 'key', 'operation', 'props'];
+      for (final (index, name) in names.indexed) {
+        final state = index.isEven ? 'cubit' : 'bloc';
+        expect(
+          await runner.run([name, '-s', state], workingDir: project),
+          0,
+          reason: err.toString(),
+        );
+      }
+
+      // Packages aren't installed, so only name-conflict codes are checked.
+      final analyze = await Process.run(Platform.resolvedExecutable, [
+        'analyze',
+        '--format=machine',
+        p.join(project.path, 'lib', 'feature'),
+      ]);
+      final conflicts = '${analyze.stdout}${analyze.stderr}'
+          .split('\n')
+          .where(
+            (line) => RegExp(
+              'DUPLICATE_DEFINITION|REFERENCED_BEFORE_DECLARATION|'
+              'DUPLICATE_FIELD_FORMAL_PARAMETER',
+            ).hasMatch(line),
+          )
+          .toList();
+      expect(conflicts, isEmpty);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
   test('reports a file system failure during generation', () async {
     final project = writePubspec(createTempDir(), flutterPubspec, 'app');
     // A file where the lib/feature folder should be makes generation fail.
