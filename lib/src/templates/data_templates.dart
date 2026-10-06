@@ -1,5 +1,7 @@
 // Feature data layer: models, retrofit service, repository implementation.
 // Placeholders: {{snake}}, {{pascal}}, {{camel}}, {{package}}.
+// {{camel}} always takes a suffix ({{camel}}Entity): a bare feature name
+// like `id` or `state` would clash with identifiers in the templates.
 
 const modelTemplate = r'''
 import 'package:{{package}}/feature/{{snake}}/domain/entities/{{snake}}.dart';
@@ -57,13 +59,13 @@ abstract class {{pascal}}ApiService {
 
   @POST('/api/v1/')
   Future<HttpResponse<{{pascal}}Model>> post{{pascal}}(
-    @Body() {{pascal}}Model {{camel}},
+    @Body() {{pascal}}Model {{camel}}Model,
   );
 
   @PUT('/api/v1/{id}')
   Future<HttpResponse<{{pascal}}Model>> edit{{pascal}}(
     @Path('id') String id,
-    @Body() {{pascal}}Model {{camel}},
+    @Body() {{pascal}}Model {{camel}}Model,
   );
 
   @DELETE('/api/v1/{id}')
@@ -94,19 +96,19 @@ class {{pascal}}RepositoryImpl implements {{pascal}}Repository {
   }
 
   @override
-  Future<DataState<{{pascal}}Entity>> post{{pascal}}({{pascal}}Entity {{camel}}) {
+  Future<DataState<{{pascal}}Entity>> post{{pascal}}({{pascal}}Entity {{camel}}Entity) {
     return _send(
-      () => _apiService.post{{pascal}}({{pascal}}Model.fromEntity({{camel}})),
+      () => _apiService.post{{pascal}}({{pascal}}Model.fromEntity({{camel}}Entity)),
     );
   }
 
   @override
   Future<DataState<{{pascal}}Entity>> edit{{pascal}}(
     String id,
-    {{pascal}}Entity {{camel}},
+    {{pascal}}Entity {{camel}}Entity,
   ) {
     return _send(
-      () => _apiService.edit{{pascal}}(id, {{pascal}}Model.fromEntity({{camel}})),
+      () => _apiService.edit{{pascal}}(id, {{pascal}}Model.fromEntity({{camel}}Entity)),
     );
   }
 

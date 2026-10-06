@@ -1,6 +1,8 @@
 // Feature presentation layer and dependency registration, one template per
 // state management variant where they differ.
 // Placeholders: {{snake}}, {{pascal}}, {{camel}}, {{package}}.
+// {{camel}} always takes a suffix ({{camel}}Entity): a bare feature name
+// like `id` or `state` would clash with identifiers in the templates.
 
 const stateTemplate = r'''
 import 'package:dio/dio.dart';
@@ -12,12 +14,12 @@ enum {{pascal}}Operation { fetch, post, edit, delete }
 
 sealed class {{pascal}}State extends Equatable {
   /// The {{snake}} currently displayed, kept while loading and on failure.
-  final {{pascal}}Entity? {{camel}};
+  final {{pascal}}Entity? {{camel}}Entity;
 
-  const {{pascal}}State({this.{{camel}}});
+  const {{pascal}}State({this.{{camel}}Entity});
 
   @override
-  List<Object?> get props => [{{camel}}];
+  List<Object?> get props => [{{camel}}Entity];
 }
 
 class {{pascal}}Initial extends {{pascal}}State {
@@ -27,22 +29,22 @@ class {{pascal}}Initial extends {{pascal}}State {
 class {{pascal}}Loading extends {{pascal}}State {
   final {{pascal}}Operation operation;
 
-  const {{pascal}}Loading(this.operation, {super.{{camel}}});
+  const {{pascal}}Loading(this.operation, {super.{{camel}}Entity});
 
   @override
-  List<Object?> get props => [operation, {{camel}}];
+  List<Object?> get props => [operation, {{camel}}Entity];
 }
 
 class {{pascal}}FetchSuccess extends {{pascal}}State {
-  const {{pascal}}FetchSuccess({{pascal}}Entity {{camel}}) : super({{camel}}: {{camel}});
+  const {{pascal}}FetchSuccess({{pascal}}Entity {{camel}}Entity) : super({{camel}}Entity: {{camel}}Entity);
 }
 
 class {{pascal}}PostSuccess extends {{pascal}}State {
-  const {{pascal}}PostSuccess({{pascal}}Entity {{camel}}) : super({{camel}}: {{camel}});
+  const {{pascal}}PostSuccess({{pascal}}Entity {{camel}}Entity) : super({{camel}}Entity: {{camel}}Entity);
 }
 
 class {{pascal}}EditSuccess extends {{pascal}}State {
-  const {{pascal}}EditSuccess({{pascal}}Entity {{camel}}) : super({{camel}}: {{camel}});
+  const {{pascal}}EditSuccess({{pascal}}Entity {{camel}}Entity) : super({{camel}}Entity: {{camel}}Entity);
 }
 
 class {{pascal}}DeleteSuccess extends {{pascal}}State {
@@ -51,17 +53,17 @@ class {{pascal}}DeleteSuccess extends {{pascal}}State {
   const {{pascal}}DeleteSuccess(this.response);
 
   @override
-  List<Object?> get props => [response, {{camel}}];
+  List<Object?> get props => [response, {{camel}}Entity];
 }
 
 class {{pascal}}Failure extends {{pascal}}State {
   final {{pascal}}Operation operation;
   final DioException error;
 
-  const {{pascal}}Failure(this.operation, this.error, {super.{{camel}}});
+  const {{pascal}}Failure(this.operation, this.error, {super.{{camel}}Entity});
 
   @override
-  List<Object?> get props => [operation, error, {{camel}}];
+  List<Object?> get props => [operation, error, {{camel}}Entity];
 }
 ''';
 
@@ -104,19 +106,19 @@ class {{pascal}}Cubit extends Cubit<{{pascal}}State> {
     );
   }
 
-  Future<void> post({{pascal}}Entity {{camel}}) {
+  Future<void> post({{pascal}}Entity {{camel}}Entity) {
     return _run(
       {{pascal}}Operation.post,
-      () => _post{{pascal}}UseCase(params: {{camel}}),
+      () => _post{{pascal}}UseCase(params: {{camel}}Entity),
       {{pascal}}PostSuccess.new,
     );
   }
 
-  Future<void> edit(String id, {{pascal}}Entity {{camel}}) {
+  Future<void> edit(String id, {{pascal}}Entity {{camel}}Entity) {
     return _run(
       {{pascal}}Operation.edit,
       () => _edit{{pascal}}UseCase(
-        params: Edit{{pascal}}Params(id: id, {{camel}}: {{camel}}),
+        params: Edit{{pascal}}Params(id: id, {{camel}}Entity: {{camel}}Entity),
       ),
       {{pascal}}EditSuccess.new,
     );
@@ -136,15 +138,15 @@ class {{pascal}}Cubit extends Cubit<{{pascal}}State> {
     {{pascal}}State Function(T data) onSuccess,
   ) async {
     final generation = ++_generation;
-    final previous = state.{{camel}};
-    emit({{pascal}}Loading(operation, {{camel}}: previous));
+    final previous = state.{{camel}}Entity;
+    emit({{pascal}}Loading(operation, {{camel}}Entity: previous));
 
     final result = await request();
     if (generation != _generation || isClosed) return;
 
     final error = result.error;
     if (error != null) {
-      emit({{pascal}}Failure(operation, error, {{camel}}: previous));
+      emit({{pascal}}Failure(operation, error, {{camel}}Entity: previous));
     } else {
       emit(onSuccess(result.data as T));
     }
@@ -194,7 +196,7 @@ class {{pascal}}Bloc extends Bloc<{{pascal}}Event, {{pascal}}State> {
       return _run(
         emit,
         {{pascal}}Operation.post,
-        () => _post{{pascal}}UseCase(params: event.{{camel}}),
+        () => _post{{pascal}}UseCase(params: event.{{camel}}Entity),
         {{pascal}}PostSuccess.new,
       );
     });
@@ -203,7 +205,7 @@ class {{pascal}}Bloc extends Bloc<{{pascal}}Event, {{pascal}}State> {
         emit,
         {{pascal}}Operation.edit,
         () => _edit{{pascal}}UseCase(
-          params: Edit{{pascal}}Params(id: event.id, {{camel}}: event.{{camel}}),
+          params: Edit{{pascal}}Params(id: event.id, {{camel}}Entity: event.{{camel}}Entity),
         ),
         {{pascal}}EditSuccess.new,
       );
@@ -225,15 +227,15 @@ class {{pascal}}Bloc extends Bloc<{{pascal}}Event, {{pascal}}State> {
     {{pascal}}State Function(T data) onSuccess,
   ) async {
     final generation = ++_generation;
-    final previous = state.{{camel}};
-    emit({{pascal}}Loading(operation, {{camel}}: previous));
+    final previous = state.{{camel}}Entity;
+    emit({{pascal}}Loading(operation, {{camel}}Entity: previous));
 
     final result = await request();
     if (generation != _generation || emit.isDone) return;
 
     final error = result.error;
     if (error != null) {
-      emit({{pascal}}Failure(operation, error, {{camel}}: previous));
+      emit({{pascal}}Failure(operation, error, {{camel}}Entity: previous));
     } else {
       emit(onSuccess(result.data as T));
     }
@@ -257,22 +259,22 @@ class {{pascal}}FetchRequested extends {{pascal}}Event {
 }
 
 class {{pascal}}PostRequested extends {{pascal}}Event {
-  final {{pascal}}Entity {{camel}};
+  final {{pascal}}Entity {{camel}}Entity;
 
-  const {{pascal}}PostRequested(this.{{camel}});
+  const {{pascal}}PostRequested(this.{{camel}}Entity);
 
   @override
-  List<Object?> get props => [{{camel}}];
+  List<Object?> get props => [{{camel}}Entity];
 }
 
 class {{pascal}}EditRequested extends {{pascal}}Event {
   final String id;
-  final {{pascal}}Entity {{camel}};
+  final {{pascal}}Entity {{camel}}Entity;
 
-  const {{pascal}}EditRequested(this.id, this.{{camel}});
+  const {{pascal}}EditRequested(this.id, this.{{camel}}Entity);
 
   @override
-  List<Object?> get props => [id, {{camel}}];
+  List<Object?> get props => [id, {{camel}}Entity];
 }
 
 class {{pascal}}DeleteRequested extends {{pascal}}Event {
@@ -310,9 +312,9 @@ class {{pascal}}Page extends StatelessWidget {
             if (state is {{pascal}}Failure) {
               return Center(child: Text('Error: ${state.error.message}'));
             }
-            final {{camel}} = state.{{camel}};
-            if ({{camel}} == null) return const SizedBox.shrink();
-            return {{pascal}}Widget({{camel}}: {{camel}});
+            final {{camel}}Entity = state.{{camel}}Entity;
+            if ({{camel}}Entity == null) return const SizedBox.shrink();
+            return {{pascal}}Widget({{camel}}Entity: {{camel}}Entity);
           },
         ),
         // TODO: add the actions of the {{snake}} page.
@@ -350,9 +352,9 @@ class {{pascal}}Page extends StatelessWidget {
             if (state is {{pascal}}Failure) {
               return Center(child: Text('Error: ${state.error.message}'));
             }
-            final {{camel}} = state.{{camel}};
-            if ({{camel}} == null) return const SizedBox.shrink();
-            return {{pascal}}Widget({{camel}}: {{camel}});
+            final {{camel}}Entity = state.{{camel}}Entity;
+            if ({{camel}}Entity == null) return const SizedBox.shrink();
+            return {{pascal}}Widget({{camel}}Entity: {{camel}}Entity);
           },
         ),
         // TODO: add the actions of the {{snake}} page.
@@ -368,14 +370,14 @@ import 'package:flutter/material.dart';
 import 'package:{{package}}/feature/{{snake}}/domain/entities/{{snake}}.dart';
 
 class {{pascal}}Widget extends StatelessWidget {
-  final {{pascal}}Entity {{camel}};
+  final {{pascal}}Entity {{camel}}Entity;
 
-  const {{pascal}}Widget({super.key, required this.{{camel}}});
+  const {{pascal}}Widget({super.key, required this.{{camel}}Entity});
 
   @override
   Widget build(BuildContext context) {
     // TODO: display the fields of {{pascal}}Entity.
-    return Text({{camel}}.id ?? 'No id');
+    return Text({{camel}}Entity.id ?? 'No id');
   }
 }
 ''';

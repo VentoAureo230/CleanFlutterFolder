@@ -1,5 +1,7 @@
 // Feature domain layer: entities, repository contract, use cases.
 // Placeholders: {{snake}}, {{pascal}}, {{camel}}, {{package}}.
+// {{camel}} always takes a suffix ({{camel}}Entity): a bare feature name
+// like `id` or `state` would clash with identifiers in the templates.
 
 const entityTemplate = r'''
 import 'package:equatable/equatable.dart';
@@ -36,11 +38,11 @@ import 'package:{{package}}/feature/{{snake}}/domain/entities/{{snake}}_delete_r
 abstract class {{pascal}}Repository {
   Future<DataState<{{pascal}}Entity>> get{{pascal}}();
 
-  Future<DataState<{{pascal}}Entity>> post{{pascal}}({{pascal}}Entity {{camel}});
+  Future<DataState<{{pascal}}Entity>> post{{pascal}}({{pascal}}Entity {{camel}}Entity);
 
   Future<DataState<{{pascal}}Entity>> edit{{pascal}}(
     String id,
-    {{pascal}}Entity {{camel}},
+    {{pascal}}Entity {{camel}}Entity,
   );
 
   Future<DataState<{{pascal}}DeleteResponseEntity>> delete{{pascal}}(String id);
@@ -94,9 +96,9 @@ import 'package:{{package}}/feature/{{snake}}/domain/repository/{{snake}}_reposi
 
 class Edit{{pascal}}Params {
   final String id;
-  final {{pascal}}Entity {{camel}};
+  final {{pascal}}Entity {{camel}}Entity;
 
-  const Edit{{pascal}}Params({required this.id, required this.{{camel}}});
+  const Edit{{pascal}}Params({required this.id, required this.{{camel}}Entity});
 }
 
 class Edit{{pascal}}UseCase
@@ -108,7 +110,7 @@ class Edit{{pascal}}UseCase
   @override
   Future<DataState<{{pascal}}Entity>> call({Edit{{pascal}}Params? params}) {
     if (params == null) throw ArgumentError.notNull('params');
-    return _repository.edit{{pascal}}(params.id, params.{{camel}});
+    return _repository.edit{{pascal}}(params.id, params.{{camel}}Entity);
   }
 }
 ''';
