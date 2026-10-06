@@ -1,7 +1,7 @@
 name: cff
 description: A CLI that scaffolds Clean Architecture features (data, domain, presentation) with BLoC or Cubit boilerplate for Flutter projects.
 version: 0.1.0
-repository: https://github.com/<user>/cff
+repository: https://github.com/VentoAureo230/CleanFlutterFolder
 
 environment:
   sdk: ^3.9.0
